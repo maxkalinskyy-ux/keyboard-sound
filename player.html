@@ -9,43 +9,34 @@
 var audio = null;
 var pendingSrc = null;
 var pendingVolume = 0.5;
-var unlocked = false;
+var shouldPlay = false;
 
-function unlock() {
-    if (unlocked) return;
-    unlocked = true;
-    if (pendingSrc) {
-        startPlay(pendingSrc, pendingVolume);
-    }
-}
-
-function startPlay(src, vol) {
+function tryPlay() {
+    if (!pendingSrc) return;
     if (!audio) {
-        audio = new Audio(src);
+        audio = new Audio(pendingSrc);
         audio.loop = true;
-        audio.volume = vol;
+        audio.volume = pendingVolume;
     }
-    audio.volume = vol;
-    audio.play().catch(function(){});
+    audio.src = pendingSrc;
+    audio.volume = pendingVolume;
+    audio.play().catch(function(e){ console.log('play error', e); });
 }
 
 window.addEventListener('message', function(e) {
     if (e.data.action === 'play') {
         pendingSrc = e.data.src;
         pendingVolume = e.data.volume !== undefined ? e.data.volume : 0.5;
-        if (unlocked) {
-            startPlay(pendingSrc, pendingVolume);
-        }
+        shouldPlay = true;
+        tryPlay();
     }
     if (e.data.action === 'pause') {
+        shouldPlay = false;
         if (audio) audio.pause();
     }
     if (e.data.action === 'volume') {
         pendingVolume = e.data.volume;
         if (audio) audio.volume = e.data.volume;
-    }
-    if (e.data.action === 'unlock') {
-        unlock();
     }
 });
 </script>
