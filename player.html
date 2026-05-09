@@ -7,22 +7,46 @@
 <body>
 <script>
 var audio = null;
-window.addEventListener('message', function(e) {
-  if (e.data.action === 'play') {
-    if (!audio) {
-      audio = new Audio(e.data.src);
-      audio.loop = true;
-      audio.volume = e.data.volume !== undefined ? e.data.volume : 0.5;
+var pendingSrc = null;
+var pendingVolume = 0.5;
+var unlocked = false;
+
+function unlock() {
+    if (unlocked) return;
+    unlocked = true;
+    if (pendingSrc) {
+        startPlay(pendingSrc, pendingVolume);
     }
-    audio.volume = e.data.volume !== undefined ? e.data.volume : 0.5;
-    audio.play();
-  }
-  if (e.data.action === 'pause') {
-    if (audio) audio.pause();
-  }
-  if (e.data.action === 'volume') {
-    if (audio) audio.volume = e.data.volume;
-  }
+}
+
+function startPlay(src, vol) {
+    if (!audio) {
+        audio = new Audio(src);
+        audio.loop = true;
+        audio.volume = vol;
+    }
+    audio.volume = vol;
+    audio.play().catch(function(){});
+}
+
+window.addEventListener('message', function(e) {
+    if (e.data.action === 'play') {
+        pendingSrc = e.data.src;
+        pendingVolume = e.data.volume !== undefined ? e.data.volume : 0.5;
+        if (unlocked) {
+            startPlay(pendingSrc, pendingVolume);
+        }
+    }
+    if (e.data.action === 'pause') {
+        if (audio) audio.pause();
+    }
+    if (e.data.action === 'volume') {
+        pendingVolume = e.data.volume;
+        if (audio) audio.volume = e.data.volume;
+    }
+    if (e.data.action === 'unlock') {
+        unlock();
+    }
 });
 </script>
 </body>
