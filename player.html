@@ -9,7 +9,6 @@
 var audio = null;
 var pendingSrc = null;
 var pendingVolume = 0.5;
-var shouldPlay = false;
 
 function tryPlay() {
     if (!pendingSrc) return;
@@ -18,20 +17,17 @@ function tryPlay() {
         audio.loop = true;
         audio.volume = pendingVolume;
     }
-    audio.src = pendingSrc;
     audio.volume = pendingVolume;
-    audio.play().catch(function(e){ console.log('play error', e); });
+    audio.play().catch(function(e){ console.log('play error:', e); });
 }
 
 window.addEventListener('message', function(e) {
     if (e.data.action === 'play') {
         pendingSrc = e.data.src;
         pendingVolume = e.data.volume !== undefined ? e.data.volume : 0.5;
-        shouldPlay = true;
         tryPlay();
     }
     if (e.data.action === 'pause') {
-        shouldPlay = false;
         if (audio) audio.pause();
     }
     if (e.data.action === 'volume') {
